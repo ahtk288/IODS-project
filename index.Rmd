@@ -1,5 +1,6 @@
 ---
 title: "IODS course project"
+author: "Antti Korhonen"
 output:
   html_document:
     theme: cosmo
