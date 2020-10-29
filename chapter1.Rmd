@@ -12,7 +12,7 @@ date()
 
 # Link to my GitHub repository:
 
-# https://ahtk288.github.io/IODS-project/
+# https://github.com/ahtk288/IODS-project
 
 # -Antti
 
