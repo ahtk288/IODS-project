@@ -1,13 +1,122 @@
-# Insert chapter 2 title here
+# Exercise 2. Regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
+*During this weeks work we learned some preprocessing of the data by scaling combination variables to original scales and excluding unneeded variables and observations from the data. Further we learned how to get overview of the data by calculating summary statistics and by making plots (e.g scatter plot). With regression model we learned to create a model to see which variables affected most to exam points. Validity of the selected regression model graphically exlored with residuals vs. fitted, quantile-quantile and residuals vs. leverage plots.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
 
 ```{r}
+
+# #### DATA ANALYSIS ####
+
 date()
+
+#### TASK 1 ####
+# reading in and structure of the data
+
+# packages needed
+library(data.table)
+library(ggplot2)
+
+# Reading the learning 2014 data into R, using fread function of data.table package
+learning2014 <- fread("F:/IODS_usb/IODS-project/data/learning2014.csv")
+
+# structure and dimensions of the data 
+# data.frame with 166 obs. (students) of 7 variables (gender, age, attitude, deep, stra, surf, points)
+str(learning2014)
+dim(learning2014)
+
+
+#### TASK 2 ####
+# a graphical overview and summaries of the data 
+
+# to fit the sraight line with lm in scatterplot matrix
+# https://stackoverflow.com/questions/39667830/how-to-insert-trendlines-in-scatterplot-matrix
+
+panel.lm <- function (x, y,  pch = par("pch"), col.lm = "red",  ...) {   
+  ymin <- min(y)
+  ymax <- max(y)
+  xmin <- min(x)
+  xmax <- max(x)
+  ylim <- c(min(ymin,xmin),max(ymax,xmax))
+  xlim <- ylim
+  points(x, y, pch = pch,ylim = ylim, xlim= xlim,...)
+  ok <- is.finite(x) & is.finite(y)
+  if (any(ok)) 
+    abline(lm(y[ok]~ x[ok]), 
+           col = col.lm, ...)
+}
+
+# draw a scatter plot matrix of the variables in learning2014.
+# [,2:7] excludes the first column (gender)
+pairs(learning2014[,2:7], panel = panel.lm)
+
+# access the GGally and ggplot2 libraries
+library(GGally)
+library(ggplot2)
+
+# create a more advanced plot matrix with ggpairs() and draw the plot. Divided by gender
+p <- ggpairs(learning2014, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+# create an plot matrix with ggpairs(). All subjects
+ggpairs(learning2014, lower = list(combo = wrap("facethist", bins = 20)))
+
+# summaries of the variables
+summary(learning2014)
+
+
+
+#### TASKS 3 AND 4 ####
+
+# create a regression model with multiple explanatory variables
+my_model2 <- lm(points ~ attitude+stra+age, data = learning2014)
+
+# print out a summary of the model
+summary(my_model2)
+
+# create a regression model with multiple explanatory variables
+my_model2 <- lm(points ~ attitude, data = learning2014)
+
+# print out a summary of the model
+summary(my_model2)
+
+
+
+#### TASK 5 ####
+
+# draw diagnostic plots using the plot() function. Choose the plots 1 (residual vs. fitted), 
+# 2 (Normal QQ-plot) and 5 (Residuals vs. leverage)
+par(mfrow = c(2,2))
+plot(my_model2, which = c(1,2,5))
+
 ```
 
-Here we go again...
+TASK 1
+Dataframe "learning2014" had 166 observations (students) and 7 variables (gender, age, attitude, deep, stra, surf, points).
+
+TASK 2
+
+Median age of the students were 22 ranging from 17 to 55 years. Median of the exam points was 23 (min.7 and max.33). Variables attitude, deep, stra and surf were in the scale ranging from 1 to 5. Higher the number the better.  
+
+There were more females (little over 100) than males (around 60). Women median age and their median attitude towards statistics was little lower compared to men. Overall there were significant relationship with between surf and attitude (cor:-0.176), surf and deep (cor:-0.324), surf and stra (cor:-0.161). Points correlated significantly with attitude (cor:0.437), stra (cor:0.146) and surf (cor:-0.144). Most significant thing that affected to exam points was attitude.
+
+TASKS 3 AND 4
+
+Three variables that I chose to the model were were attitude, age and stra (summary of the model in lines 92-109). This model explained 22% (R2) of the variance in exam points (adjusted R2, 20 %). The model itself was statistically significant (p value < 0.05). Only attitude in this model had p-value lower than 0.05, so I removed variables age and stra from the model. Attitude alone explained 19 % of the variability of the exam points.
+
+TASK 5
+
+Validity of the model (points ~ attitude) assumptions was graphically explored with residuals vs. fitted, normal quantile-quantile (QQ) and residuals vs. leverage plots
+
+Residuals vs. fitted
+
+This plot is used to detect outliers, unequal error variances and non-linear relationship between predictor and outcome variable.
+Linearity seems to hold reasonably well. The red line is close to the dashed line. Only between values 24 and 30 spread of the residuals increases a little. Points 35, 56 and 146 were possible outliers.
+
+QQ plot of the residuals
+
+QQ plot checks are the errors of the model normally distributed. There was reasonable fit with the line. Only tails deviated a little from the dashed line. In the lower left corner of the plot there were possibly two outliers (35, 56, 145)
+
+Residual vs. Leverage
+
+This plot helps to identify possible influential outliers in a linear regression model. Based on this plot there were no influential outliers that were affecting to the model. 
+

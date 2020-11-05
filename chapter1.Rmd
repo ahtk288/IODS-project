@@ -1,20 +1,12 @@
 
 # About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+*I noticed this course from some UEF yammer group. One hope is that during this course we would learn how to extract data from open data interfaces, although not sure if this is part of the course agenda. Perhaps I am not fully realized yet what is this course about, but the course name "Introduction to open data science" raised my interest towards this course. Link to my GitHub repository: https://github.com/ahtk288/IODS-project*
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
 
 date()
-
-# I noticed this course from some UEF yammer group. One hope is that during this course we would learn how to extract data from open data interfaces, although not sure if this is part of the course agenda. Perhaps I am not fully realized yet what is this course about, but the course name "Introduction to open data science" raised my interest towards this course.
-
-# Link to my GitHub repository:
-
-# https://github.com/ahtk288/IODS-project
-
-# -Antti
 
 
 ```
