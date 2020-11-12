@@ -1,0 +1,208 @@
+# Exercise 3. Logistic regression
+
+*In this exercise we first merged two datasets and created new variables e.g. by calculating averages of weekday and weekend alcohol consumptions.Further we analyzed relationships between alcohol consumption and selected variables by using logistic regression model and odds ratios and explored the predictive power of the model. I studied how alcohol consumption affected to number of school absences and class failures, grades and quality of family relationships.*
+
+
+**TASKS 1 AND 2**
+
+The data have 370 observations (students) of 51 variables. Information related to the data is presented in the following [link](https://archive.ics.uci.edu/ml/datasets/Student+Performance).
+
+```{r}
+
+# TASK 1
+
+date()
+
+# read in the data using fread function of data.table package
+library(data.table)
+alc_consu <- fread("F:/IODS_usb/IODS-project/data/pormath.csv")
+
+# get the names of the variables
+names(alc_consu)
+
+```
+
+**TASK 3**
+
+I chose variables (i) absence (number of school absences), (ii) failure (no. of past class failures), (iii) G3 (final grade ranging from 0-20) and (iv) famrel (quality of family relationships 1= very bad and 5= excellent). 
+
+Alcohol consumption was graded from 1 (1=very low) to 5 (=very high). Division between low and high users (variable high_use) was created by using alcohol consumption of 2 as threshold. Those students whose workday and weekend consumption was higher than 2 were high consumers.
+So my hypotheses were that higher alcohol consumption lead to higher number of absences and failures, lower grades and these subjects did have lower quality relationship with their family.
+
+**TASK 4**
+
+In total out of 370 students there were 111 high alcohol consumers (41 females and 70 males). 
+
+Bit surprisingly high consuming females had better grades (11.8) than low consumers (11.4). High consuming males had clearly lower grades (10.3) than low consuming males (12.3)
+
+There were clearly more absences among high consuming females and males (6.9 and 6.1) than low consuming females and males (4.3 and 2.9). Also there were more failures in high consuming group (Females:0.10 and Males: 0.14) than low consuming group (Females: 0.29 and Males:0.39).
+
+Quality of family relationships were bit poorer in high consuming groups (F:3.7 and M:3.8) in comparison to low consuming groups (F:3.9 and M:4.1).
+
+All in all my hypotheses seemed to be correct although females who consumed more alcohol had better grades in comparison to low consuming females. 
+
+```{r}
+
+# TASK 4, numerical summary
+
+# access the tidyverse libraries dplyr and ggplot2
+library(dplyr); library(ggplot2)
+
+# produce summary statistics by group
+alc_consu %>% group_by(sex, high_use) %>% summarise(count = n(), mean_grade = mean(G3))
+alc_consu %>% group_by(sex, high_use) %>% summarise(count = n(), mean_grade = mean(absences))
+alc_consu %>% group_by(sex, high_use) %>% summarise(count = n(), mean_grade = mean(failures))
+alc_consu %>% group_by(sex, high_use) %>% summarise(count = n(), mean_grade = mean(famrel))
+
+# TASK 4, graphical summary
+
+library(ggplot2)
+
+# initialize a plot of high_use and G3, absences, failures and family relationship
+g1 <- ggplot(alc_consu, aes(x = high_use, y = G3, col = sex))
+g2 <- ggplot(alc_consu, aes(x = high_use, y = absences, col = sex))
+g3 <- ggplot(alc_consu, aes(x = high_use, y = failures, col = sex))
+g4 <- ggplot(alc_consu, aes(x = high_use, y = famrel, col = sex))
+  
+# define the plot as a boxplot and draw it
+g1 + geom_boxplot() + ylab("G3")
+g2 + geom_boxplot() + ylab("absences")
+g3 + geom_boxplot() + ylab("failures")
+g4 + geom_boxplot() + ylab("famrel")
+
+
+```
+
+**TASK 5, logistic regression**
+
+Median **deviance residual** (-0.67) was small meaning that the model was not greatly biased. 
+
+There was no significant relationship between **grades** and alcohol consumption (p-value 0.31). High alcohol consumption had significant relationship between **failures** (p-value 0.01) and **absences** (p-value < 0.01). **Failures** and **absences** increased when alcohol consumption increased. P-value of quality of family relationship **(famrel)** was only a little over 0.05 so one could say it had also significant relationship to alcohol consumption. Quality of family relations got lower when alcohol consumption was higher.
+
+**Null deviance:** The null deviance tells us how well we can predict our output only using the intercept. Smaller is better. 
+
+**Residual deviance:** The residual deviance tells us how well we can predict our output using the intercept and our inputs. Smaller is better
+
+**The Akaike information criteria (AIC)** is used to estimate how well the model describes the patterns in data. It is used to compare models of the same dataset. Lower the score the better. 
+
+Explanations for null and residual deviance and the Akaike information criteria (AIC) were found from following  [link](https://stats.stackexchange.com/questions/86351/interpretation-of-rs-output-for-binomial-regression).
+
+
+```{r}
+
+# TASK 5, logistics regression
+
+# find the model with glm()
+glmodel <- glm(high_use ~ G3 + failures + absences + famrel, data = alc_consu, family = "binomial")
+
+# print out a summary of the model
+summary(glmodel)
+
+# print out the coefficients of the model
+coef(glmodel)
+```
+
+**TASK 5, odds ratios**
+
+Odds Ratio Interpretation [link](https://www.statisticshowto.com/odds-ratio)
+
+* An odds ratio of exactly 1 means that exposure to property A does not affect the odds of property B.
+* An odds ratio of more than 1 means that there is a higher odds of property B happening with exposure to property A.
+* An odds ratio is less than 1 is associated with lower odds.
+
+Odds ratios and 95 % confidence intervals of **failures** 1.72 (1.14-2.64) and **abscences** 1.08 (1.03-1.13) were above 1 so higher alcohol consumption raised statistically significantly the probability of failures and absences. Alcohol consumption affected basically statistically significantly to quality of **family relations** OR = 0.78 (0.61-1.00) by having negative effect. Confidence interval was only a little above 1. Higher alcohol consumption did not affect statistically significantly to **grades** (OR = 0.78 (0.89-1.04))
+
+```{r}
+
+# TASK 5, odds ratios
+
+# compute odds ratios (OR)
+OR <- coef(glmodel) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(glmodel) %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+
+
+```
+
+**TASK 6, predictions**
+
+For this modelling I dropped variable G3 (grades) out of the model as it had no statistically significant relationship with high/low alcohol consumption. 
+
+Prediction was set to be true if the value of 'probability' was greater than 0.5.
+
+242 individuals were correctly classified as low alcohol consumers (true negative) while 17 were classified wrongly as high alcohol consumers (false positive). 19 individuals were correctly classified as high alcohol consumers (true positive) while 92 individuals were classified wrongly as low alcohol consumers (false negative).
+
+Average prediction error of the model was 0.29, thus the model accuracy was 0.81. The model underestimates the number of high alcohol consumers.
+
+I tested the model by setting probability of high alcohol use to 0 and 1. With probability 0 average prediction error of the model was 0.3 and with probability of 1 average prediction error was 0.7. The model works better when there are no high alcohol consumers in the dataset. 
+
+```{r}
+
+# TASK 6, predictions
+
+glmodel_1 <- glm(high_use ~ failures + absences + famrel, data = alc_consu, family = "binomial")
+
+# predict() the probability of high_use
+probabilities <- predict(glmodel_1, type = "response")
+
+# add the predicted probabilities to 'alc_consu'
+alc_consu <- mutate(alc_consu, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc_consu <- mutate(alc_consu, prediction = probability > 0.5)
+
+# see the last ten original classes, predicted probabilities, and class predictions
+select(alc_consu, failures, absences, famrel, high_use, probability, prediction) %>% tail(10)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc_consu$high_use, prediction = alc_consu$prediction)
+
+# access dplyr and ggplot2
+library(dplyr); library(ggplot2)
+
+# initialize a plot of 'high_use' versus 'probability' in 'alc_consu'
+g <- ggplot(alc_consu, aes(x = probability, y = high_use, col = prediction))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+# tabulate the target variable versus the predictions
+table(high_use = alc_consu$high_use, prediction = alc_consu$prediction) %>% prop.table %>% addmargins
+
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc_consu$high_use, prob = alc_consu$probability)
+loss_func(class = alc_consu$high_use, prob = 0)
+loss_func(class = alc_consu$high_use, prob = 1)
+
+
+```
+
+**TASK 7, 10-fold cross-validation**
+
+The 10-fold cross-validation of my model (high_use ~ failures + absences + famrel) resulted in prediction error of 0.3, which is little bit higher than datacamp model error 0.26.
+
+```{r}
+# compute the average number of wrong predictions in the (training) data
+
+
+# K-fold cross-validation
+library(boot)
+cv <- cv.glm(data = alc_consu, cost = loss_func, glmfit = glmodel_1, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+
+```
+
+
