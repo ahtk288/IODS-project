@@ -1,0 +1,174 @@
+
+# Exercise 5. Dimensionality reduction techniques
+
+*Dimension reduction methods are used to transform multidimensional data to 2- or 3-dimensional space. By reducing dimensionality it is easier to understand multidimensional phenomenas. Principal component analysis (PCA) is a simple, non-parametric method for extracting relevant information from data sets. With PCA it is possible to reduce complex data (continuous variables) set to a lower dimension to reveal the simplified structures that often underlie it. Principal component analysis is a standard tool in modern data-analysis.  [(Shlens 2014)]("https://arxiv.org/abs/1404.1100v1").*
+
+*Multiple correspondence analysis (MCA) is used for discrete variables. In this method variables are transformed first to continuous scale followed by dimension reduction.*
+
+**TASK 1**
+
+Preprocessed human development index data had 155 observations (countries) with 8 variables. More about the data can be found from [here]("http://hdr.undp.org/en/content/human-development-index-hdi") and [here]("http://hdr.undp.org/sites/default/files/hdr2015_technical_notes.pdf"). Mean life expectancy (life_exp) in these countries was around 74 years ranging from 49 to almost 84 years, mean expected education (edu_exp) about 13 years from about ranging from 5 to 20 years, mean gross net income (GNI) per capita around 17 thousand ranging from around 600 to 123 thousand. Mean maternal mortality ratios (MMR), adolescent birth ratio (ABR) and representation in parliament (%) (parRep) were 149, 47 and 21, respectively. Variable GNI had clearly the highest standard deviation (over 18 thousand). 
+
+The Highest negative correlation was between life expectancy and MMR (86%), meaning that the higher the life expectancy the lower MMR. The highest positive correlations was between life expectancy and expected mean years of education (79%).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set
+
+```
+
+```{r date, echo=FALSE}
+
+date()
+```
+
+```{r data summary}
+library(data.table)
+human <- fread("F:/IODS_usb/IODS-project/data/human.csv")
+
+# assigning country names as row values (again)
+row.names(human) <- human$V1
+human$V1 <- NULL 
+
+# dimensions of the data
+dim(human)
+
+# summary of the data
+library(psych)
+describe(human)
+```
+
+```{r ggpairs1, fig.cap = "ggairs plot of the HDI data variables"}
+
+# Access GGally
+library(GGally)
+
+# visualize the 'human' variables
+ggpairs(human)
+```
+
+```{r corrplot, fig.cap="Correlation matrix of the HDI data variables"}
+
+# compute the correlation matrix and visualize it with corrplot
+library(dplyr)
+library(corrplot)
+cor(human) %>% corrplot
+```
+
+```{r plot, fig.cap="8 most relevant cross-correlations of the HDI data variables"}
+# devtools::install_github("laresbernardo/lares")
+library(lares)
+
+corr_cross(human, # name of dataset
+  max_pvalue = 0.05, # display only significant correlations (at 5% level)
+  top = 8 # display top 10 couples of variables (by correlation coefficient)
+)
+
+```
+
+**TASK 2** 
+
+***PCA with non-scaled data***
+
+First two principal components (PC) was chosen to analysis. The first PC captured 100% of the original variables variances. PCA computed with non-standardized variables results showed that GNI variable dominated the analysis, because it had clearly the highest variance compared to other variables. So it is not meaningful to compute PCA with non-scaled data. (note that although figure axis titles says standardized PC the analysis was done with non-scaled data)
+
+```{r pca with non standardized data}
+
+# packages
+library(ggplot2)
+library(dplyr)
+
+# perform principal component analysis on non standardized (with the SVD method)
+pca_human <- prcomp(human)
+pca_human
+```
+
+```{r biplot1, fig.cap = "Principal component analysis with **non-standardized** data. The analysis is dominated by the GNI variable."}
+
+# draw a biplot of the principal component representation and the original variables
+library(ggbiplot)
+ggbiplot(pca_human, choices = 1:2)
+```
+
+**TASK 3 and 4**
+
+***PCA with scaled variables and interpretations of the first two principal component dimensions***
+
+After scaling the variables the means and standard deviations of each variable were 0 and 1, respectively, thus each of the variables were contributing now equally to analysis. The result biplot was now clearly different compared to non-scaled PCA. Now GNI variable was not dominating the PCA.
+
+PC1 and PC2 captured around 70% of the original variables variances. Variables ABR and MMR contributed to PC2, which captured around 16 % of the variances. Variables of GNI, life and study expectancy and ratio of female and male in secondary education contributed to PC1 that alone explained 54% of the variability of the original variables. 
+
+```{r biplot2, fig.cap="Principal component analysis biplot with standardized variables of human data. Variable arrows pointing to the right are contributing to PC1 and those pointing to the left to PC2"}
+
+# standardize the variables
+human_std <- scale(human)
+
+# print out summaries of the standardized variables
+library(psych)
+describe(human_std)
+
+# perform principal component analysis (with the SVD method)
+pca_human_std <- prcomp(human_std)
+pca_human_std
+
+# draw a biplot of the principal component representation and the standardized variables
+library(ggbiplot)
+ggbiplot(pca_human_std, choices = 1:2)
+
+```
+
+**TASK5** 
+
+***Loading tea dataset***
+
+The tea dataset had 300 observations of 6 variables describing what kind of tea, with whom, where and with sugar or no people like to drink their tea.  
+
+```{r loading tea dataset}
+
+library(FactoMineR)
+library(ggplot2)
+library(tidyr)
+
+# read in tea data
+data("tea")
+
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- tea[keep_columns]
+
+# look at the summaries and structure of the data
+summary(tea_time)
+str(tea_time)
+```
+
+***Visualising tea dataset***
+
+Most of the people prefer to buy their Earl grey tea bags from chain stores, drink tea without lemon, milk or other substances and not after/ no lunch. It was about 50/50 divided to sugar users and not using sugar. 
+
+```{r ggplot1, fig.cap="Distributions of the tea dataset variables"}
+
+# visualize the dataset
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+***Multiple Correspondence Analysis***
+
+Dimensions 1 and 2 explained about 28 % of the variance of the data. The closer the variables are in the biplot of MCA more similar they are and vice versa. For example unpackaged tea and tea bought from a tea shop are the most different variables in the dataset in comparison to other variables. Variables like not lunch, Earl Grey, sugar and no sugar and alone were close to each other meaning that they were more similar to each other. Moreover negatively correlated variables are placed on the opposite quadrants 
+
+```{r MCA, fig.cap="Multiple correspondence analysis plot of tea data"}
+
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA with FactoMineR biplot
+plot.MCA(mca, invisible=c("ind"), habillage = "quali")
+
+```
+
+
