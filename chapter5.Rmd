@@ -11,14 +11,8 @@ Preprocessed human development index data had 155 observations (countries) with 
 
 The Highest negative correlation was between life expectancy and MMR (86%), meaning that the higher the life expectancy the lower MMR. The highest positive correlations was between life expectancy and expected mean years of education (79%).
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(message = FALSE)
-knitr::opts_chunk$set(warning = FALSE)
-knitr::opts_chunk$set
 
-```
-
-```{r date, echo=FALSE}
+```{r, echo=FALSE}
 
 date()
 ```
@@ -77,11 +71,11 @@ First two principal components (PC) was chosen to analysis. The first PC capture
 
 # packages
 library(ggplot2)
-library(dplyr)
 
 # perform principal component analysis on non standardized (with the SVD method)
 pca_human <- prcomp(human)
 pca_human
+summary(pca_human)
 ```
 
 ```{r biplot1, fig.cap = "Principal component analysis with **non-standardized** data. The analysis is dominated by the GNI variable."}
@@ -89,6 +83,7 @@ pca_human
 # draw a biplot of the principal component representation and the original variables
 library(ggbiplot)
 ggbiplot(pca_human, choices = 1:2)
+biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
 ```
 
 **TASK 3 and 4**
